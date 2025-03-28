@@ -8,8 +8,8 @@ import { SOLANA_CHAIN, SOLANA_MAINNET_CLUSTER } from "./constant.ts";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <PrivyProvider
-      appId={import.meta.env.VITE_BOOM_APP_ID}
-      clientId={import.meta.env.VITE_BOOM_CLIENT_ID}
+      appId="cm485ehd706mjjqspwtpqlo74"
+      clientId="client-WY5eKEXMXJeLZ3aMC2Z8ptnD446mVSsMgvCHVZfbo3FM2"
       config={{
         appearance: {
           accentColor: "#FCD535",
