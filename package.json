@@ -10,10 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@boomeme/wallet-sdk": "^1.11.20",
+    "@privy-io/react-auth": "^2.18.0",
+    "@solana/web3.js": "^1.98.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "viem": "2.23.15"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
@@ -27,6 +27,7 @@
     "globals": "^15.9.0",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "vite-plugin-node-polyfills": "^0.24.0"
   }
 }

@@ -1,96 +1,112 @@
-// import {
-//   useWallets,
-//   ConnectedWallet,
-//   EIP1193Provider,
-// } from "@privy-io/react-auth";
-// import "./App.css";
-// import { useEffect, useState } from "react";
-// import { ethers } from "ethers";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  useSolanaWallets,
+  usePrivy,
+  ConnectedSolanaWallet,
+} from "@privy-io/react-auth";
+import "./App.css";
+import { useCallback, useMemo } from "react";
+import {
+  PublicKey,
+  Transaction,
+  TransactionInstruction,
+} from "@solana/web3.js";
 
-// export const BSC_CHAIN_ID_HEX = "0x38" as `0x${string}`; // https://chainlist.org/chain/56
-// export const BSC_CHAIN_ID_DEC = 56;
-// export const PRIVY_BSC_CHAIN_ID = "eip155:56";
+const memoProgramId = new PublicKey(
+  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+);
 
-// function App() {
-//   const { wallets } = useWallets();
+function App() {
+  const { user, ready: readyUser, authenticated, login, logout } = usePrivy();
 
-//   const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
+  const {
+    ready: readySolanaWallets,
+    wallets: solanaWallets, // 可能是包含embedded钱包和用户自己的外部钱包
+  } = useSolanaWallets();
 
-//   const evmWallet: ConnectedWallet | undefined = wallets.find(
-//     (wallet) =>
-//       wallet.type === "ethereum" && wallet.walletClientType === "privy"
-//   );
+  const solanaEmbeddedWallets = useMemo(() => {
+    return solanaWallets.filter(
+      (wallet) => wallet.walletClientType === "privy"
+    );
+  }, [solanaWallets]);
 
-//   useEffect(() => {
-//     console.debug("Privy Evm Wallets", wallets);
-//   }, [wallets]);
+  const mainSolanaEmbeddedWallet =
+    solanaEmbeddedWallets.find((w) => w.walletIndex == 0) ||
+    solanaEmbeddedWallets[0];
 
-//   useEffect(() => {
-//     console.debug(
-//       `[useBscPrivyEmbeddedWallets] ${evmWallet?.address} ${evmWallet?.chainId}`
-//     );
-//     // 如果有 evm 钱包，但是不在 bsc 链上，则切换到 bsc 链
-//     if (evmWallet && evmWallet.chainId !== PRIVY_BSC_CHAIN_ID) {
-//       evmWallet.switchChain(BSC_CHAIN_ID_DEC);
-//     }
-//   }, [evmWallet]);
+  console.log("user", { user, readyUser, authenticated });
 
-//   // 获取这个唯一的 bsc 钱包
-//   const bscWallet = wallets.find(
-//     (wallet) =>
-//       wallet.type === "ethereum" &&
-//       wallet.walletClientType === "privy" &&
-//       wallet?.chainId == PRIVY_BSC_CHAIN_ID
-//   ); // 可能有多个，但是我们目前只支持一个。
+  console.log("SolanaWallets", {
+    readySolanaWallets,
+    solanaWallets,
+    solanaEmbeddedWallets,
+    mainSolanaEmbeddedWallet,
+  });
 
-//   console.log("signer", {
-//     signer,
-//     bscWallet,
-//     provider: bscWallet?.getEthereumProvider,
-//     wallets,
-//   });
+  const signTransaction = useCallback(async (wallet: ConnectedSolanaWallet) => {
+    if (!wallet) return;
+    const transaction = new Transaction();
 
-//   useEffect(() => {
-//     const initializeSigner = async () => {
-//       if (!bscWallet) return;
-//       const provider: EIP1193Provider | undefined =
-//         await bscWallet.getEthereumProvider();
-//       if (!provider) return;
-//       const ethersProvider = new ethers.BrowserProvider(provider);
-//       const initializedSigner = await ethersProvider.getSigner();
-//       setSigner(initializedSigner);
-//       // const signer = await bscWallet?.getEthereumSigner();
-//       // setSigner(signer);
-//     };
+    transaction.add(
+      new TransactionInstruction({
+        keys: [
+          {
+            pubkey: new PublicKey(wallet.address),
+            isSigner: true,
+            isWritable: false,
+          },
+        ],
+        programId: memoProgramId,
+        data: new TextEncoder().encode("Hello Solana Transaction Test") as any,
+      })
+    );
 
-//     if (
-//       bscWallet &&
-//       bscWallet?.getEthereumProvider &&
-//       typeof bscWallet?.getEthereumProvider === "function"
-//     ) {
-//       initializeSigner();
-//     }
-//   }, [bscWallet?.getEthereumProvider, bscWallet, bscWallet?.address]);
+    transaction.recentBlockhash = "Mf6HLb4ru42v4xW5b6fEi6HKEhwVDG5uYkud3HciLqU";
+    transaction.feePayer = new PublicKey(wallet.address);
+    console.time("[useSolanaPrivyEmbeddedWallet] preSignTransaction");
+    await wallet.signTransaction(transaction);
+    console.timeEnd("[useSolanaPrivyEmbeddedWallet] preSignTransaction");
+  }, []);
 
-//   return (
-//     <div>
-//       <button
-//         onClick={async () => {
-//           const message = "Hello, world!";
-//           const signature = await signer?.signMessage(message);
-//           console.log("signature", signature);
-//         }}
-//       >
-//         Sign Message
-//       </button>
-//     </div>
-//   );
-// }
+  if (!authenticated) {
+    return (
+      <div>
+        <button onClick={() => login()}>Login</button>
+      </div>
+    );
+  }
 
-// export default App;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <button
+        onClick={async () => {
+          // const message = "Hello, world!";
+          // const signature = await mainSolanaEmbeddedWallet?.signMessage(
+          //   new TextEncoder().encode(message)
+          // );
+          // console.log("signature", signature);
 
-export const App = () => {
-  return <div>Hello</div>;
-};
+          const wallet = solanaEmbeddedWallets.find(
+            (w) => w.address === "DnQSkzywJLWjjfFCkaQ3dyXEVrDKmrDA2rokvGGU7R38"
+          );
+          console.log("wallet", {
+            wallet,
+            mainSolanaEmbeddedWallet,
+          });
+          if (!wallet) {
+            console.log("wallet not found");
+            return;
+          }
+
+          await signTransaction(wallet);
+        }}
+      >
+        Sign Transaction
+      </button>
+
+      <button onClick={() => logout()}>Logout</button>
+    </div>
+  );
+}
 
 export default App;
